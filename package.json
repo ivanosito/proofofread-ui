@@ -9,12 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ucanto/core": "^10.3.1",
+    "@web3-storage/w3up-client": "^17.2.0",
     "ethers": "^6.13.5",
     "formidable": "^3.5.4",
     "next": "15.3.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "web3.storage": "github:web3-storage/web3.storage"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
