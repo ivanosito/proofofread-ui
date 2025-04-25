@@ -1,4 +1,3 @@
-// src/pages/index.tsx
 import { useState } from 'react';
 
 export default function Home() {
@@ -35,9 +34,9 @@ export default function Home() {
         body: formData,
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Upload failed: ${text}`);
+      const contentType = res.headers.get('content-type');
+      if (!res.ok || !contentType?.includes('application/json')) {
+        throw new Error('Server error or invalid response format.');
       }
 
       const data = await res.json();
@@ -50,46 +49,46 @@ export default function Home() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: '3rem auto', textAlign: 'center' }}>
-      <h1>📤 ProofOfRead — Upload a File to IPFS</h1>
+    <div className="max-w-xl mx-auto p-6 text-center space-y-6">
+      <h1 className="text-white text-2xl font-bold">📤 ProofOfRead — Upload a File to IPFS</h1>
 
-      <form onSubmit={handleSubmit} encType="multipart/form-data" method="POST" style={{ marginTop: '2rem' }}>
-        <input type="file" onChange={handleFileChange} />
-        <br />
-        <button
-          type="submit"
-          disabled={!file || uploading}
-          style={{
-            marginTop: '1rem',
-            padding: '0.5rem 1rem',
-            fontSize: '1rem',
-            cursor: uploading ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {uploading ? 'Uploading...' : 'Upload to IPFS'}
-        </button>
+      <form onSubmit={handleSubmit} encType="multipart/form-data" method="POST" className="space-y-4">
+        <input 
+          type="file"
+          onChange={handleFileChange}
+          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+        />
+        <div>
+          <button
+            type="submit"
+            disabled={!file || uploading}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+          >
+            {uploading ? 'Uploading...' : 'Upload to IPFS'}
+          </button>
+        </div>
       </form>
 
       {cid && (
-        <div style={{ marginTop: '2rem', wordBreak: 'break-all' }}>
+        <div className="text-green-400 break-all">
           <p>✅ File uploaded successfully!</p>
+          <p><strong>CID:</strong> {cid}</p>
           <p>
-            <strong>CID:</strong> {cid}
-          </p>
-          <p>
-            🔗{' '}
-            <a href={`https://ipfs.io/ipfs/${cid}`} target="_blank" rel="noreferrer">
-              View on IPFS
-            </a>
+            🔗 <a className="underline" href={`https://ipfs.io/ipfs/${cid}`} target="_blank" rel="noreferrer">View on IPFS</a>
           </p>
         </div>
       )}
 
       {error && (
-        <div style={{ marginTop: '2rem', color: 'red' }}>
+        <div className="text-red-500">
           ❌ <strong>Error:</strong> {error}
         </div>
       )}
     </div>
   );
 }
+
+// This is a Next.js page that allows users to upload files to IPFS using the Web3.Storage API.
+// It includes a file input, a submit button, and displays the CID and IPFS link after a successful upload.
+// The upload process is handled in the handleSubmit function, which sends the file to the server-side API endpoint.
+// The server-side API endpoint processes the file and uploads it to IPFS, returning the CID.

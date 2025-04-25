@@ -1,13 +1,8 @@
 // src/utils/storachaUploader.ts
 
 import { create } from '@web3-storage/w3up-client'
-import { CarReader } from '@ipld/car'
-import { importDAG } from '@ucanto/core/delegation'
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import type { Block } from '@ucanto/interface'
-
-const UCAN_PATH = path.join(process.cwd(), 'did-key-z6MkfsdVVS.ucan')
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
 
 import type { Client } from '@web3-storage/w3up-client'
 let client: Client | null = null
@@ -17,37 +12,19 @@ export async function uploadFile(buffer: Buffer, filename: string): Promise<stri
     try {
       client = await create()
 
+      // 👇 Replace with your real Storacha login email
+      await client.login('adrianivanov@outlook.com')
+      console.log('✅ First run identity setup complete for:', client.agent.did())
+
       const spaces = await client.spaces()
-      if (spaces.length === 0) {
-        const newSpace = await client.createSpace('proof-of-read-space')
-        await client.setCurrentSpace(newSpace.did())
-      } else {
-        await client.setCurrentSpace(spaces[0].did())
+      const targetSpace = spaces.find(space => (space as any).name === 'ProofOfReadStorage')
+
+      if (!targetSpace) {
+        throw new Error('❌ Could not find space "ProofOfReadStorage". Check spelling or permissions.')
       }
 
-      const ucanBytes = await fs.readFile(UCAN_PATH)
-      const carReader = await CarReader.fromBytes(ucanBytes)
-
-      const blocks: Block[] = []
-      for await (const block of carReader.blocks()) {
-        if (block.cid.version !== 1) {
-          throw new Error(`Unsupported CID version: ${block.cid.version}`)
-        }
-        blocks.push({
-          cid: block.cid as any,
-          bytes: block.bytes
-        } as Block)
-      }
-
-      const delegation = await importDAG(blocks)
-      console.log('🧾 Delegation:', JSON.stringify(delegation, null, 2))
-
-      try {
-        await client.addProof(delegation)
-      } catch (err: any) {
-        console.error('❌ Invalid UCAN delegation:', err)
-        throw new Error('Invalid UCAN format. Ensure it is Base64URL-safe.')
-      }
+      await client.setCurrentSpace(targetSpace.did())
+      console.log('🗂️ Using space:', targetSpace.did())
 
     } catch (error) {
       console.error('Error creating client:', error)
@@ -62,4 +39,19 @@ export async function uploadFile(buffer: Buffer, filename: string): Promise<stri
   const file = new File([buffer], filename || 'upload.pdf')
   const cid = await client.uploadFile(file)
   return cid.toString()
+}
+
+async function collectCar(out: AsyncIterable<Uint8Array>): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = []
+  for await (const chunk of out) {
+    chunks.push(chunk)
+  }
+  const totalLength = chunks.reduce((acc, curr) => acc + curr.length, 0)
+  const result = new Uint8Array(totalLength)
+  let offset = 0
+  for (const chunk of chunks) {
+    result.set(chunk, offset)
+    offset += chunk.length
+  }
+  return result
 }
